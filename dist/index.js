@@ -25656,53 +25656,34 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
+exports.getUpPath = getUpPath;
 const core = __importStar(__nccwpck_require__(7484));
-const wait_1 = __nccwpck_require__(910);
-/**
- * The main function for the action.
- * @returns {Promise<void>} Resolves when the action is complete.
- */
+const toolrunner_1 = __nccwpck_require__(6665);
+const io = __importStar(__nccwpck_require__(4994));
+const upToolname = 'up';
 async function run() {
     try {
-        const ms = core.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        core.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        core.debug(new Date().toTimeString());
-        await (0, wait_1.wait)(parseInt(ms, 10));
-        core.debug(new Date().toTimeString());
-        // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        const upPath = await getUpPath();
+        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, ['project', 'build']);
+        await upProjectBuild.exec();
+        const pushProject = core.getInput('push-project');
+        if (pushProject.toLowerCase() === 'false') {
+            core.info('Skipping up project push');
+            return;
+        }
+        const upProjectPush = new toolrunner_1.ToolRunner(upPath, ['project', 'push']);
+        await upProjectPush.exec();
     }
     catch (error) {
-        // Fail the workflow run if an error occurs
         if (error instanceof Error)
             core.setFailed(error.message);
     }
 }
-
-
-/***/ }),
-
-/***/ 910:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wait = wait;
-/**
- * Wait for a number of milliseconds.
- * @param milliseconds The number of milliseconds to wait.
- * @returns {Promise<string>} Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise(resolve => {
-        if (isNaN(milliseconds)) {
-            throw new Error('milliseconds not a number');
-        }
-        setTimeout(() => resolve('done!'), milliseconds);
-    });
+async function getUpPath() {
+    const upPath = await io.which(upToolname, false);
+    if (!upPath)
+        throw Error('up not found, you can install it using upbound/action-up');
+    return upPath;
 }
 
 

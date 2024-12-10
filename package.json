@@ -1,21 +1,22 @@
 {
-  "name": "typescript-action",
+  "name": "action-up-project",
   "description": "GitHub Actions TypeScript template",
   "version": "0.0.0",
   "author": "",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/upbound/action-up-project",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/upbound/action-up-project.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/upbound/action-up-project/issues"
   },
   "keywords": [
-    "actions",
-    "node",
-    "setup"
+    "GitHub",
+    "Actions",
+    "Upbound",
+    "Crossplane"
   ],
   "exports": {
     ".": "./dist/index.js"

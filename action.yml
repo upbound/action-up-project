@@ -1,23 +1,14 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'GitHub Actions for Upbound - up project'
+description: 'Build Upbound projects using up'
+author: 'upbound'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: 'heart'
-  color: 'red'
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
+  push-project:
+    description: 'Push Upbound project'
+    default: 'false'
 
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+branding:
+  color: 'purple'
 
 runs:
   using: node20
