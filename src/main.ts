@@ -59,6 +59,7 @@ async function run(): Promise<void> {
 async function verifyLogin(upPath: string): Promise<boolean> {
   try {
     let output = ''
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let errorOutput = ''
 
     const upOrgList = new ToolRunner(
@@ -78,6 +79,7 @@ async function verifyLogin(upPath: string): Promise<boolean> {
 
     await upOrgList.exec()
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const orgList = JSON.parse(output)
 
     if (Array.isArray(orgList) && orgList.length > 0) {
@@ -88,7 +90,13 @@ async function verifyLogin(upPath: string): Promise<boolean> {
       return false
     }
   } catch (error) {
-    core.warning('User is not logged in. Unauthorized error detected.')
+    if (error instanceof Error) {
+      core.warning(
+        `User is not logged in. Unauthorized error detected. ${error.message}`
+      )
+      return false
+    }
+    core.warning('Something went wrong.')
     return false
   }
 }

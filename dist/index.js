@@ -25711,6 +25711,7 @@ async function run() {
 async function verifyLogin(upPath) {
     try {
         let output = '';
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let errorOutput = '';
         const upOrgList = new toolrunner_1.ToolRunner(upPath, ['org', 'list', '--format', 'json'], {
             listeners: {
@@ -25723,6 +25724,7 @@ async function verifyLogin(upPath) {
             }
         });
         await upOrgList.exec();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const orgList = JSON.parse(output);
         if (Array.isArray(orgList) && orgList.length > 0) {
             core.info('User is logged in.');
@@ -25734,7 +25736,11 @@ async function verifyLogin(upPath) {
         }
     }
     catch (error) {
-        core.warning('User is not logged in. Unauthorized error detected.');
+        if (error instanceof Error) {
+            core.warning(`User is not logged in. Unauthorized error detected. ${error.message}`);
+            return false;
+        }
+        core.warning('Something went wrong.');
         return false;
     }
 }
