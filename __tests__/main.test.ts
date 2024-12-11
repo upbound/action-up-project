@@ -1,7 +1,7 @@
 import * as io from '@actions/io'
 import * as core from '@actions/core'
 import * as run from '../src/main'
-import { ToolRunner } from '@actions/exec/lib/toolrunner'
+import { ExecOptions } from '@actions/exec/lib/interfaces'
 
 const runMock = jest.spyOn(run, 'run')
 
@@ -15,19 +15,22 @@ let mockStatusCode: number
 let stdOutMessage: string | undefined
 let stdErrMessage: string | undefined
 
-const mockExecFn = jest.fn().mockImplementation((toolPath, args, options) => {
-  if (options?.listeners?.stdout) {
-    options.listeners.stdout(Buffer.from(stdOutMessage || '', 'utf8'))
-  }
-  if (options?.listeners?.stderr) {
-    options.listeners.stderr(Buffer.from(stdErrMessage || '', 'utf8'))
-  }
-  return Promise.resolve(mockStatusCode)
-})
+const mockExecFn = jest
+  .fn()
+  .mockImplementation((toolPath, args, options: ExecOptions) => {
+    if (options?.listeners?.stdout) {
+      options.listeners.stdout(Buffer.from(stdOutMessage || '', 'utf8'))
+    }
+    if (options?.listeners?.stderr) {
+      options.listeners.stderr(Buffer.from(stdErrMessage || '', 'utf8'))
+    }
+    return mockStatusCode
+  })
 jest.mock('@actions/exec/lib/toolrunner', () => {
   return {
     ToolRunner: jest.fn().mockImplementation((toolPath, args, options) => {
       return {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         exec: () => mockExecFn(toolPath, args, options)
       }
     })
@@ -65,7 +68,8 @@ describe('action', () => {
     await run.run()
     expect(runMock).toHaveReturned()
 
-    expect(mockExecFn).toHaveBeenCalledWith(
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
       path,
       ['org', 'list', '--format', 'json'],
       expect.any(Object)
