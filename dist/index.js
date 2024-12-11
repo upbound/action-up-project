@@ -25656,6 +25656,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
+exports.verifyLogin = verifyLogin;
 exports.getUpPath = getUpPath;
 const core = __importStar(__nccwpck_require__(7484));
 const toolrunner_1 = __nccwpck_require__(6665);
@@ -25664,19 +25665,77 @@ const upToolname = 'up';
 async function run() {
     try {
         const upPath = await getUpPath();
-        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, ['project', 'build']);
+        const isLoggedIn = await verifyLogin(upPath);
+        if (!isLoggedIn) {
+            core.setFailed('User is not logged in. Please log in to Upbound.');
+        }
+        const projectFile = core.getInput('project-file');
+        const repository = core.getInput('repository');
+        const tag = core.getInput('tag');
+        const publicVisibility = core.getInput('public');
+        const upProjectBuildArgs = ['project', 'build'];
+        if (projectFile && projectFile.trim().length > 0) {
+            upProjectBuildArgs.push('--project-file', projectFile);
+        }
+        if (repository && repository.trim().length > 0) {
+            upProjectBuildArgs.push('--repository', repository);
+        }
+        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, upProjectBuildArgs);
         await upProjectBuild.exec();
         const pushProject = core.getInput('push-project');
         if (pushProject.toLowerCase() === 'false') {
             core.info('Skipping up project push');
             return;
         }
-        const upProjectPush = new toolrunner_1.ToolRunner(upPath, ['project', 'push']);
+        const upProjectPushArgs = ['project', 'push'];
+        if (projectFile && projectFile.trim().length > 0) {
+            upProjectPushArgs.push('-f', projectFile);
+        }
+        if (repository && repository.trim().length > 0) {
+            upProjectPushArgs.push('--repository', repository);
+        }
+        if (tag && tag.trim().length > 0) {
+            upProjectPushArgs.push('--tag', tag);
+        }
+        if (publicVisibility.toLowerCase() === 'true') {
+            upProjectPushArgs.push('--public');
+        }
+        const upProjectPush = new toolrunner_1.ToolRunner(upPath, upProjectPushArgs);
         await upProjectPush.exec();
     }
     catch (error) {
         if (error instanceof Error)
             core.setFailed(error.message);
+    }
+}
+async function verifyLogin(upPath) {
+    try {
+        let output = '';
+        let errorOutput = '';
+        const upOrgList = new toolrunner_1.ToolRunner(upPath, ['org', 'list', '--format', 'json'], {
+            listeners: {
+                stdout: (data) => {
+                    output += data.toString();
+                },
+                stderr: (data) => {
+                    errorOutput += data.toString();
+                }
+            }
+        });
+        await upOrgList.exec();
+        const orgList = JSON.parse(output);
+        if (Array.isArray(orgList) && orgList.length > 0) {
+            core.info('User is logged in.');
+            return true;
+        }
+        else {
+            core.warning('User is not logged in. No organizations found.');
+            return false;
+        }
+    }
+    catch (error) {
+        core.warning('User is not logged in. Unauthorized error detected.');
+        return false;
     }
 }
 async function getUpPath() {

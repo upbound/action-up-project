@@ -1,7 +1,7 @@
 {
   "name": "action-up-project",
   "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "author": "",
   "private": true,
   "homepage": "https://github.com/upbound/action-up-project",

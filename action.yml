@@ -10,10 +10,14 @@ inputs:
     description: 'Path to project definition file. Default to upbound.yaml'
     default: ''
   repository:
-    description: 'Repository for the built package. Overrides the repository specified in the project file.'
+    description:
+      'Repository for the built package. Overrides the repository specified in
+      the project file.'
     default: ''
   tag:
-    description: 'Tag for the built package. If not provided, a semver tag will be generated.'
+    description:
+      'Tag for the built package. If not provided, a semver tag will be
+      generated.'
     default: ''
   public:
     description: 'Create new repositories with public visibility'
