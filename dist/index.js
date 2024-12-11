@@ -25682,14 +25682,14 @@ async function run() {
         }
         const upProjectBuild = new toolrunner_1.ToolRunner(upPath, upProjectBuildArgs);
         await upProjectBuild.exec();
-        const pushProject = core.getInput('push-project');
-        if (pushProject.toLowerCase() === 'false') {
+        const pushProject = core.getInput('push-project', { required: true });
+        if (pushProject.toLowerCase() !== 'true') {
             core.info('Skipping up project push');
             return;
         }
         const upProjectPushArgs = ['project', 'push'];
         if (projectFile && projectFile.trim().length > 0) {
-            upProjectPushArgs.push('-f', projectFile);
+            upProjectPushArgs.push('--project-file', projectFile);
         }
         if (repository && repository.trim().length > 0) {
             upProjectPushArgs.push('--repository', repository);
@@ -25727,7 +25727,7 @@ async function verifyLogin(upPath) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const orgList = JSON.parse(output);
         if (Array.isArray(orgList) && orgList.length > 0) {
-            core.info('User is logged in.');
+            core.debug('User is logged in.');
             return true;
         }
         else {
@@ -25737,7 +25737,7 @@ async function verifyLogin(upPath) {
     }
     catch (error) {
         if (error instanceof Error) {
-            core.warning(`User is not logged in. Unauthorized error detected. ${error.message}`);
+            core.warning(`User is not logged in. Unauthorized error detected.`);
             return false;
         }
         core.warning('Something went wrong.');
