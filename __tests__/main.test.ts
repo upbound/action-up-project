@@ -1,89 +1,229 @@
-/**
- * Unit tests for the action's main functionality, src/main.ts
- *
- * These should be run as if the action was called from a workflow.
- * Specifically, the inputs listed in `action.yml` should be set as environment
- * variables following the pattern `INPUT_<INPUT_NAME>`.
- */
-
+import * as io from '@actions/io'
 import * as core from '@actions/core'
-import * as main from '../src/main'
+import * as run from '../src/main'
+import { ExecOptions } from '@actions/exec/lib/interfaces'
 
-// Mock the action's main function
-const runMock = jest.spyOn(main, 'run')
+const runMock = jest.spyOn(run, 'run')
 
-// Other utilities
-const timeRegex = /^\d{2}:\d{2}:\d{2}/
-
-// Mock the GitHub Actions core library
+let infoMock: jest.SpiedFunction<typeof core.info>
 let debugMock: jest.SpiedFunction<typeof core.debug>
-let errorMock: jest.SpiedFunction<typeof core.error>
+let warningMock: jest.SpiedFunction<typeof core.warning>
 let getInputMock: jest.SpiedFunction<typeof core.getInput>
 let setFailedMock: jest.SpiedFunction<typeof core.setFailed>
-let setOutputMock: jest.SpiedFunction<typeof core.setOutput>
+
+let mockStatusCode: number
+let stdOutMessage: string | undefined
+let stdErrMessage: string | undefined
+
+const mockExecFn = jest
+  .fn()
+  .mockImplementation((toolPath, args, options: ExecOptions) => {
+    if (options?.listeners?.stdout) {
+      options.listeners.stdout(Buffer.from(stdOutMessage || '', 'utf8'))
+    }
+    if (options?.listeners?.stderr) {
+      options.listeners.stderr(Buffer.from(stdErrMessage || '', 'utf8'))
+    }
+    return mockStatusCode
+  })
+jest.mock('@actions/exec/lib/toolrunner', () => {
+  return {
+    ToolRunner: jest.fn().mockImplementation((toolPath, args, options) => {
+      return {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        exec: () => mockExecFn(toolPath, args, options)
+      }
+    })
+  }
+})
+
+const path = '/path/to/up'
 
 describe('action', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-
+    infoMock = jest.spyOn(core, 'info').mockImplementation()
     debugMock = jest.spyOn(core, 'debug').mockImplementation()
-    errorMock = jest.spyOn(core, 'error').mockImplementation()
+    warningMock = jest.spyOn(core, 'warning').mockImplementation()
     getInputMock = jest.spyOn(core, 'getInput').mockImplementation()
     setFailedMock = jest.spyOn(core, 'setFailed').mockImplementation()
-    setOutputMock = jest.spyOn(core, 'setOutput').mockImplementation()
   })
 
-  it('sets the time output', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return '500'
-        default:
-          return ''
-      }
-    })
+  it('fails if up is not found', async () => {
+    jest.spyOn(io, 'which').mockResolvedValue('')
 
-    await main.run()
+    await run.run()
     expect(runMock).toHaveReturned()
 
-    // Verify that all of the core library functions were called correctly
-    expect(debugMock).toHaveBeenNthCalledWith(1, 'Waiting 500 milliseconds ...')
-    expect(debugMock).toHaveBeenNthCalledWith(
-      2,
-      expect.stringMatching(timeRegex)
-    )
-    expect(debugMock).toHaveBeenNthCalledWith(
-      3,
-      expect.stringMatching(timeRegex)
-    )
-    expect(setOutputMock).toHaveBeenNthCalledWith(
-      1,
-      'time',
-      expect.stringMatching(timeRegex)
-    )
-    expect(errorMock).not.toHaveBeenCalled()
-  })
-
-  it('sets a failed status', async () => {
-    // Set the action's inputs as return values from core.getInput()
-    getInputMock.mockImplementation(name => {
-      switch (name) {
-        case 'milliseconds':
-          return 'this is not a number'
-        default:
-          return ''
-      }
-    })
-
-    await main.run()
-    expect(runMock).toHaveReturned()
-
-    // Verify that all of the core library functions were called correctly
     expect(setFailedMock).toHaveBeenNthCalledWith(
       1,
-      'milliseconds not a number'
+      'up not found, you can install it using upbound/action-up'
     )
-    expect(errorMock).not.toHaveBeenCalled()
+  })
+
+  it('fails if your are not logged in', async () => {
+    jest.spyOn(io, 'which').mockResolvedValue(path)
+    stdErrMessage = 'Unauthorized'
+    mockStatusCode = 1
+
+    await run.run()
+    expect(runMock).toHaveReturned()
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['org', 'list', '--format', 'json'],
+      expect.any(Object)
+    )
+
+    expect(warningMock).toHaveBeenNthCalledWith(
+      1,
+      'User is not logged in. Unauthorized error detected.'
+    )
+    expect(setFailedMock).toHaveBeenNthCalledWith(
+      1,
+      'User is not logged in. Please log in to Upbound.'
+    )
+  })
+
+  it('does not push if push-project is false', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'push-project':
+          return 'false'
+        default:
+          return ''
+      }
+    })
+
+    jest.spyOn(io, 'which').mockResolvedValue(path)
+    stdOutMessage = JSON.stringify([{ id: 1, name: 'test-org' }])
+    mockStatusCode = 0
+
+    await run.run()
+    expect(runMock).toHaveReturned()
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['org', 'list', '--format', 'json'],
+      expect.any(Object)
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      2,
+      path,
+      ['project', 'build'],
+      undefined
+    )
+
+    expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')
+    expect(infoMock).toHaveBeenNthCalledWith(1, 'Skipping up project push')
+  })
+
+  it('builds and pushes', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'push-project':
+          return 'true'
+        default:
+          return ''
+      }
+    })
+
+    jest.spyOn(io, 'which').mockResolvedValue(path)
+    stdOutMessage = JSON.stringify([{ id: 1, name: 'test-org' }])
+    mockStatusCode = 0
+
+    await run.run()
+    expect(runMock).toHaveReturned()
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['org', 'list', '--format', 'json'],
+      expect.any(Object)
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      2,
+      path,
+      ['project', 'build'],
+      undefined
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      3,
+      path,
+      ['project', 'push'],
+      undefined
+    )
+
+    expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')
+  })
+
+  it('builds and pushes with all flags', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'push-project':
+          return 'true'
+        case 'project-file':
+          return 'test/upbound.yaml'
+        case 'repository':
+          return 'test-repo'
+        case 'tag':
+          return 'test-tag'
+        case 'public':
+          return 'true'
+        default:
+          return ''
+      }
+    })
+
+    jest.spyOn(io, 'which').mockResolvedValue(path)
+    stdOutMessage = JSON.stringify([{ id: 1, name: 'test-org' }])
+    mockStatusCode = 0
+
+    await run.run()
+    expect(runMock).toHaveReturned()
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['org', 'list', '--format', 'json'],
+      expect.any(Object)
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      2,
+      path,
+      [
+        'project',
+        'build',
+        '--project-file',
+        'test/upbound.yaml',
+        '--repository',
+        'test-repo'
+      ],
+      undefined
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      3,
+      path,
+      [
+        'project',
+        'push',
+        '--project-file',
+        'test/upbound.yaml',
+        '--repository',
+        'test-repo',
+        '--tag',
+        'test-tag',
+        '--public'
+      ],
+      undefined
+    )
+
+    expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')
   })
 })

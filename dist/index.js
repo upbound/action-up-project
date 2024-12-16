@@ -25656,53 +25656,99 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.run = run;
+exports.verifyLogin = verifyLogin;
+exports.getUpPath = getUpPath;
 const core = __importStar(__nccwpck_require__(7484));
-const wait_1 = __nccwpck_require__(910);
-/**
- * The main function for the action.
- * @returns {Promise<void>} Resolves when the action is complete.
- */
+const toolrunner_1 = __nccwpck_require__(6665);
+const io = __importStar(__nccwpck_require__(4994));
+const upToolname = 'up';
 async function run() {
     try {
-        const ms = core.getInput('milliseconds');
-        // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-        core.debug(`Waiting ${ms} milliseconds ...`);
-        // Log the current timestamp, wait, then log the new timestamp
-        core.debug(new Date().toTimeString());
-        await (0, wait_1.wait)(parseInt(ms, 10));
-        core.debug(new Date().toTimeString());
-        // Set outputs for other workflow steps to use
-        core.setOutput('time', new Date().toTimeString());
+        const upPath = await getUpPath();
+        const isLoggedIn = await verifyLogin(upPath);
+        if (!isLoggedIn) {
+            core.setFailed('User is not logged in. Please log in to Upbound.');
+        }
+        const projectFile = core.getInput('project-file');
+        const repository = core.getInput('repository');
+        const tag = core.getInput('tag');
+        const publicVisibility = core.getInput('public');
+        const upProjectBuildArgs = ['project', 'build'];
+        if (projectFile && projectFile.trim().length > 0) {
+            upProjectBuildArgs.push('--project-file', projectFile);
+        }
+        if (repository && repository.trim().length > 0) {
+            upProjectBuildArgs.push('--repository', repository);
+        }
+        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, upProjectBuildArgs);
+        await upProjectBuild.exec();
+        const pushProject = core.getInput('push-project', { required: true });
+        if (pushProject.toLowerCase() !== 'true') {
+            core.info('Skipping up project push');
+            return;
+        }
+        const upProjectPushArgs = ['project', 'push'];
+        if (projectFile && projectFile.trim().length > 0) {
+            upProjectPushArgs.push('--project-file', projectFile);
+        }
+        if (repository && repository.trim().length > 0) {
+            upProjectPushArgs.push('--repository', repository);
+        }
+        if (tag && tag.trim().length > 0) {
+            upProjectPushArgs.push('--tag', tag);
+        }
+        if (publicVisibility.toLowerCase() === 'true') {
+            upProjectPushArgs.push('--public');
+        }
+        const upProjectPush = new toolrunner_1.ToolRunner(upPath, upProjectPushArgs);
+        await upProjectPush.exec();
     }
     catch (error) {
-        // Fail the workflow run if an error occurs
         if (error instanceof Error)
             core.setFailed(error.message);
     }
 }
-
-
-/***/ }),
-
-/***/ 910:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.wait = wait;
-/**
- * Wait for a number of milliseconds.
- * @param milliseconds The number of milliseconds to wait.
- * @returns {Promise<string>} Resolves with 'done!' after the wait is over.
- */
-async function wait(milliseconds) {
-    return new Promise(resolve => {
-        if (isNaN(milliseconds)) {
-            throw new Error('milliseconds not a number');
+async function verifyLogin(upPath) {
+    try {
+        let output = '';
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        let errorOutput = '';
+        const upOrgList = new toolrunner_1.ToolRunner(upPath, ['org', 'list', '--format', 'json'], {
+            listeners: {
+                stdout: (data) => {
+                    output += data.toString();
+                },
+                stderr: (data) => {
+                    errorOutput += data.toString();
+                }
+            }
+        });
+        await upOrgList.exec();
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const orgList = JSON.parse(output);
+        if (Array.isArray(orgList) && orgList.length > 0) {
+            core.debug('User is logged in.');
+            return true;
         }
-        setTimeout(() => resolve('done!'), milliseconds);
-    });
+        else {
+            core.warning('User is not logged in. No organizations found.');
+            return false;
+        }
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            core.warning(`User is not logged in. Unauthorized error detected.`);
+            return false;
+        }
+        core.warning('Something went wrong.');
+        return false;
+    }
+}
+async function getUpPath() {
+    const upPath = await io.which(upToolname, false);
+    if (!upPath)
+        throw Error('up not found, you can install it using upbound/action-up');
+    return upPath;
 }
 
 

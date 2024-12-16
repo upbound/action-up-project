@@ -1,23 +1,30 @@
-name: 'The name of your action here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'GitHub Actions for Upbound - up project'
+description: 'Build Upbound projects using up'
+author: 'upbound'
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: 'heart'
-  color: 'red'
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: 'Your input description here'
-    required: true
-    default: '1000'
+  push-project:
+    description: 'Push Upbound project'
+    default: 'false'
+  project-file:
+    description: 'Path to project definition file. Default to upbound.yaml'
+    default: ''
+  repository:
+    description:
+      'Repository for the built package. Overrides the repository specified in
+      the project file.'
+    default: ''
+  tag:
+    description:
+      'Tag for the built package. If not provided, a semver tag will be
+      generated.'
+    default: ''
+  public:
+    description: 'Create new repositories with public visibility'
+    default: 'false'
 
-# Define your outputs here.
-outputs:
-  time:
-    description: 'Your output description here'
+branding:
+  color: 'purple'
 
 runs:
   using: node20

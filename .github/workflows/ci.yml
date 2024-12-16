@@ -44,7 +44,7 @@ jobs:
         id: npm-ci-test
         run: npm run ci-test
 
-  test-action:
+  test-action-build-project:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
 
@@ -53,12 +53,14 @@ jobs:
         id: checkout
         uses: actions/checkout@v4
 
-      - name: Test Local Action
-        id: test-action
+      - name: Install up
+        uses: upbound/action-up@v1
+        with:
+          organization: github-actions-test
+          api-token: ${{ secrets.UP_API_TOKEN }}
+
+      - name: Build Upbound project
+        id: up-project-build
         uses: ./
         with:
-          milliseconds: 2000
-
-      - name: Print Output
-        id: output
-        run: echo "${{ steps.test-action.outputs.time }}"
+          project-file: test/project/upbound.yaml
