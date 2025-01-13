@@ -22,6 +22,9 @@ inputs:
   public:
     description: 'Create new repositories with public visibility'
     default: 'false'
+  skip-login:
+    description: 'Skip login'
+    default: 'false'
 
 branding:
   color: 'purple'

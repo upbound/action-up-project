@@ -61,6 +61,14 @@ describe('action', () => {
   })
 
   it('fails if your are not logged in', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'skip-login':
+          return 'false'
+        default:
+          return ''
+      }
+    })
     jest.spyOn(io, 'which').mockResolvedValue(path)
     stdErrMessage = 'Unauthorized'
     mockStatusCode = 1
@@ -83,6 +91,32 @@ describe('action', () => {
       1,
       'User is not logged in. Please log in to Upbound.'
     )
+  })
+
+  it('do not check login if skip-login', async () => {
+    getInputMock.mockImplementation(name => {
+      switch (name) {
+        case 'skip-login':
+          return 'true'
+        default:
+          return ''
+      }
+    })
+    jest.spyOn(io, 'which').mockResolvedValue(path)
+    stdOutMessage = ''
+    mockStatusCode = 0
+
+    await run.run()
+    expect(runMock).toHaveReturned()
+
+    expect(mockExecFn).not.toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['org', 'list', '--format', 'json'],
+      expect.any(Object)
+    )
+
+    expect(infoMock).toHaveBeenNthCalledWith(1, 'Skipping login check.')
   })
 
   it('does not push if push-project is false', async () => {
