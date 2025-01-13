@@ -25665,9 +25665,17 @@ const upToolname = 'up';
 async function run() {
     try {
         const upPath = await getUpPath();
-        const isLoggedIn = await verifyLogin(upPath);
-        if (!isLoggedIn) {
-            core.setFailed('User is not logged in. Please log in to Upbound.');
+        // NOTE (markanderstrocme): allowing skipping login check if people are using their own container registry
+        const skipLoginCheck = core.getInput('skip-login-check', { required: true });
+        if (skipLoginCheck.toLowerCase() === 'true') {
+            core.info('Skipping login check.');
+        }
+        else {
+            const isLoggedIn = await verifyLogin(upPath);
+            if (!isLoggedIn) {
+                core.setFailed('User is not logged in. Please log in to Upbound.');
+                return;
+            }
         }
         const projectFile = core.getInput('project-file');
         const repository = core.getInput('repository');
