@@ -63,7 +63,7 @@ describe('action', () => {
   it('fails if your are not logged in', async () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'skip-login':
+        case 'skip-login-check':
           return 'false'
         default:
           return ''
@@ -93,10 +93,10 @@ describe('action', () => {
     )
   })
 
-  it('do not check login if skip-login', async () => {
+  it('do not check login if skip-login-check', async () => {
     getInputMock.mockImplementation(name => {
       switch (name) {
-        case 'skip-login':
+        case 'skip-login-check':
           return 'true'
         default:
           return ''
@@ -114,6 +114,13 @@ describe('action', () => {
       path,
       ['org', 'list', '--format', 'json'],
       expect.any(Object)
+    )
+
+    expect(mockExecFn).toHaveBeenNthCalledWith(
+      1,
+      path,
+      ['project', 'build'],
+      undefined
     )
 
     expect(infoMock).toHaveBeenNthCalledWith(1, 'Skipping login check.')

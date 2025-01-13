@@ -8,9 +8,9 @@ async function run(): Promise<void> {
   try {
     const upPath = await getUpPath()
 
-    // NOTE (markanderstrocme): allowing skipping login if people are using their own container registry
-    const skipLogin = core.getInput('skip-login', { required: true })
-    if (skipLogin.toLowerCase() === 'true') {
+    // NOTE (markanderstrocme): allowing skipping login check if people are using their own container registry
+    const skipLoginCheck = core.getInput('skip-login-check', { required: true })
+    if (skipLoginCheck.toLowerCase() === 'true') {
       core.info('Skipping login check.')
     } else {
       const isLoggedIn = await verifyLogin(upPath)
