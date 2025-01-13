@@ -12,7 +12,6 @@ async function run(): Promise<void> {
     const skipLogin = core.getInput('skip-login', { required: true })
     if (skipLogin.toLowerCase() === 'true') {
       core.info('Skipping login check.')
-      return
     } else {
       const isLoggedIn = await verifyLogin(upPath)
       if (!isLoggedIn) {
