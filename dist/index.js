@@ -25722,6 +25722,7 @@ async function verifyLogin(upPath) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         let errorOutput = '';
         const upOrgList = new toolrunner_1.ToolRunner(upPath, ['org', 'list', '--format', 'json'], {
+            silent: true,
             listeners: {
                 stdout: (data) => {
                     output += data.toString();
