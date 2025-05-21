@@ -116,12 +116,9 @@ describe('action', () => {
       expect.any(Object)
     )
 
-    expect(mockExecFn).toHaveBeenNthCalledWith(
-      1,
-      path,
-      ['project', 'build'],
-      undefined
-    )
+    expect(mockExecFn).toHaveBeenNthCalledWith(1, path, ['project', 'build'], {
+      cwd: undefined
+    })
 
     expect(infoMock).toHaveBeenNthCalledWith(1, 'Skipping login check.')
   })
@@ -150,12 +147,9 @@ describe('action', () => {
       expect.any(Object)
     )
 
-    expect(mockExecFn).toHaveBeenNthCalledWith(
-      2,
-      path,
-      ['project', 'build'],
-      undefined
-    )
+    expect(mockExecFn).toHaveBeenNthCalledWith(2, path, ['project', 'build'], {
+      cwd: undefined
+    })
 
     expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')
     expect(infoMock).toHaveBeenNthCalledWith(1, 'Skipping up project push')
@@ -185,19 +179,13 @@ describe('action', () => {
       expect.any(Object)
     )
 
-    expect(mockExecFn).toHaveBeenNthCalledWith(
-      2,
-      path,
-      ['project', 'build'],
-      undefined
-    )
+    expect(mockExecFn).toHaveBeenNthCalledWith(2, path, ['project', 'build'], {
+      cwd: undefined
+    })
 
-    expect(mockExecFn).toHaveBeenNthCalledWith(
-      3,
-      path,
-      ['project', 'push'],
-      undefined
-    )
+    expect(mockExecFn).toHaveBeenNthCalledWith(3, path, ['project', 'push'], {
+      cwd: undefined
+    })
 
     expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')
   })
@@ -208,13 +196,15 @@ describe('action', () => {
         case 'push-project':
           return 'true'
         case 'project-file':
-          return 'test/upbound.yaml'
+          return 'upbound.yaml'
         case 'repository':
           return 'test-repo'
         case 'tag':
           return 'test-tag'
         case 'public':
           return 'true'
+        case 'cwd':
+          return 'test/project'
         default:
           return ''
       }
@@ -241,11 +231,13 @@ describe('action', () => {
         'project',
         'build',
         '--project-file',
-        'test/upbound.yaml',
+        'upbound.yaml',
         '--repository',
         'test-repo'
       ],
-      undefined
+      {
+        cwd: 'test/project'
+      }
     )
 
     expect(mockExecFn).toHaveBeenNthCalledWith(
@@ -255,14 +247,16 @@ describe('action', () => {
         'project',
         'push',
         '--project-file',
-        'test/upbound.yaml',
+        'upbound.yaml',
         '--repository',
         'test-repo',
         '--tag',
         'test-tag',
         '--public'
       ],
-      undefined
+      {
+        cwd: 'test/project'
+      }
     )
 
     expect(debugMock).toHaveBeenNthCalledWith(1, 'User is logged in.')

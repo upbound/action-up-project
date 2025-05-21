@@ -25681,6 +25681,7 @@ async function run() {
         const repository = core.getInput('repository');
         const tag = core.getInput('tag');
         const publicVisibility = core.getInput('public');
+        const cwd = core.getInput('cwd');
         const upProjectBuildArgs = ['project', 'build'];
         if (projectFile && projectFile.trim().length > 0) {
             upProjectBuildArgs.push('--project-file', projectFile);
@@ -25688,7 +25689,9 @@ async function run() {
         if (repository && repository.trim().length > 0) {
             upProjectBuildArgs.push('--repository', repository);
         }
-        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, upProjectBuildArgs);
+        const upProjectBuild = new toolrunner_1.ToolRunner(upPath, upProjectBuildArgs, {
+            cwd: cwd !== '' ? cwd : undefined
+        });
         await upProjectBuild.exec();
         const pushProject = core.getInput('push-project', { required: true });
         if (pushProject.toLowerCase() !== 'true') {
@@ -25708,7 +25711,9 @@ async function run() {
         if (publicVisibility.toLowerCase() === 'true') {
             upProjectPushArgs.push('--public');
         }
-        const upProjectPush = new toolrunner_1.ToolRunner(upPath, upProjectPushArgs);
+        const upProjectPush = new toolrunner_1.ToolRunner(upPath, upProjectPushArgs, {
+            cwd: cwd !== '' ? cwd : undefined
+        });
         await upProjectPush.exec();
     }
     catch (error) {

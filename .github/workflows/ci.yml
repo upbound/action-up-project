@@ -63,4 +63,4 @@ jobs:
         id: up-project-build
         uses: ./
         with:
-          project-file: test/project/upbound.yaml
+          cwd: test/project
