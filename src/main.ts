@@ -73,6 +73,7 @@ async function verifyLogin(upPath: string): Promise<boolean> {
       upPath,
       ['org', 'list', '--format', 'json'],
       {
+        silent: true,
         listeners: {
           stdout: (data: Buffer) => {
             output += data.toString()
