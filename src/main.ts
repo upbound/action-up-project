@@ -24,6 +24,7 @@ async function run(): Promise<void> {
     const repository = core.getInput('repository')
     const tag = core.getInput('tag')
     const publicVisibility = core.getInput('public')
+    const cwd = core.getInput('cwd')
 
     const upProjectBuildArgs = ['project', 'build']
     if (projectFile && projectFile.trim().length > 0) {
@@ -33,7 +34,9 @@ async function run(): Promise<void> {
       upProjectBuildArgs.push('--repository', repository)
     }
 
-    const upProjectBuild = new ToolRunner(upPath, upProjectBuildArgs)
+    const upProjectBuild = new ToolRunner(upPath, upProjectBuildArgs, {
+      cwd: cwd !== '' ? cwd : undefined
+    })
     await upProjectBuild.exec()
 
     const pushProject = core.getInput('push-project', { required: true })
@@ -56,7 +59,9 @@ async function run(): Promise<void> {
       upProjectPushArgs.push('--public')
     }
 
-    const upProjectPush = new ToolRunner(upPath, upProjectPushArgs)
+    const upProjectPush = new ToolRunner(upPath, upProjectPushArgs, {
+      cwd: cwd !== '' ? cwd : undefined
+    })
     await upProjectPush.exec()
   } catch (error) {
     if (error instanceof Error) core.setFailed(error.message)
@@ -73,6 +78,7 @@ async function verifyLogin(upPath: string): Promise<boolean> {
       upPath,
       ['org', 'list', '--format', 'json'],
       {
+        silent: true,
         listeners: {
           stdout: (data: Buffer) => {
             output += data.toString()

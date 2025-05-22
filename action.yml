@@ -25,6 +25,9 @@ inputs:
   skip-login-check:
     description: 'Do not check if you are logged in.'
     default: 'false'
+  cwd:
+    description: 'The working directory of the project within the repository.'
+    default: ''
 
 branding:
   color: 'purple'
