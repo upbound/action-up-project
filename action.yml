@@ -28,6 +28,9 @@ inputs:
   cwd:
     description: 'The working directory of the project within the repository.'
     default: ''
+  cache-up-folder:
+    description: 'Enable caching of the .up/ folder to speed up builds'
+    default: 'true'
 
 branding:
   color: 'purple'
