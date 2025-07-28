@@ -30,7 +30,7 @@ async function run(): Promise<void> {
     const tag = core.getInput('tag')
     const publicVisibility = core.getInput('public')
     const cwd = core.getInput('cwd')
-    const cacheUpFolder = core.getInput('cache-up-folder')
+    const cacheSchemaFolders = core.getInput('cache-schema-folders')
 
     // Handle caching
     const workingDir = cwd !== '' ? cwd : process.cwd()
@@ -39,7 +39,7 @@ async function run(): Promise<void> {
     const upHomeCacheDir = path.join(homeDir, '.up', 'cache')
     const upHomeBuildCacheDir = path.join(homeDir, '.up', 'build-cache')
 
-    if (cacheUpFolder.toLowerCase() === 'true') {
+    if (cacheSchemaFolders.toLowerCase() === 'true') {
       await handleCacheRestore(
         [upCacheDir, upHomeCacheDir, upHomeBuildCacheDir],
         workingDir
@@ -85,7 +85,7 @@ async function run(): Promise<void> {
     await upProjectPush.exec()
 
     // Save cache after successful build/push
-    if (cacheUpFolder.toLowerCase() === 'true') {
+    if (cacheSchemaFolders.toLowerCase() === 'true') {
       await handleCacheSave(
         [upCacheDir, upHomeCacheDir, upHomeBuildCacheDir],
         workingDir
@@ -165,8 +165,13 @@ async function handleCacheRestore(
       core.info('No cache found, starting fresh build')
     }
   } catch (error) {
-    if (error instanceof Error && error.message.includes('upbound.yaml not found')) {
-      core.info('Skipping cache restore: upbound.yaml not found in repository root')
+    if (
+      error instanceof Error &&
+      error.message.includes('upbound.yaml not found')
+    ) {
+      core.info(
+        'Skipping cache restore: upbound.yaml not found in repository root'
+      )
     } else {
       core.warning(
         `Cache restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -192,8 +197,13 @@ async function handleCacheSave(
       core.info('Cache already exists, skipping save')
     }
   } catch (error) {
-    if (error instanceof Error && error.message.includes('upbound.yaml not found')) {
-      core.info('Skipping cache save: upbound.yaml not found in repository root')
+    if (
+      error instanceof Error &&
+      error.message.includes('upbound.yaml not found')
+    ) {
+      core.info(
+        'Skipping cache save: upbound.yaml not found in repository root'
+      )
     } else {
       core.warning(
         `Cache save failed: ${error instanceof Error ? error.message : 'Unknown error'}`

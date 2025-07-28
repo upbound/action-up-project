@@ -28,8 +28,10 @@ inputs:
   cwd:
     description: 'The working directory of the project within the repository.'
     default: ''
-  cache-up-folder:
-    description: 'Enable caching of the .up/ folder to speed up builds'
+  cache-schema-folders:
+    description:
+      'Enable caching of schema-related folders (.up/, ~/.up/cache/,
+      ~/.up/build-cache/) based on upbound.yaml hash to speed up builds'
     default: 'true'
 
 branding:

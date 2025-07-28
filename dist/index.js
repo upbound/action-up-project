@@ -65284,14 +65284,14 @@ async function run() {
         const tag = core.getInput('tag');
         const publicVisibility = core.getInput('public');
         const cwd = core.getInput('cwd');
-        const cacheUpFolder = core.getInput('cache-up-folder');
+        const cacheSchemaFolders = core.getInput('cache-schema-folders');
         // Handle caching
         const workingDir = cwd !== '' ? cwd : process.cwd();
         const upCacheDir = path.join(workingDir, '.up');
         const homeDir = os.homedir();
         const upHomeCacheDir = path.join(homeDir, '.up', 'cache');
         const upHomeBuildCacheDir = path.join(homeDir, '.up', 'build-cache');
-        if (cacheUpFolder.toLowerCase() === 'true') {
+        if (cacheSchemaFolders.toLowerCase() === 'true') {
             await handleCacheRestore([upCacheDir, upHomeCacheDir, upHomeBuildCacheDir], workingDir);
         }
         const upProjectBuildArgs = ['project', 'build'];
@@ -65328,7 +65328,7 @@ async function run() {
         });
         await upProjectPush.exec();
         // Save cache after successful build/push
-        if (cacheUpFolder.toLowerCase() === 'true') {
+        if (cacheSchemaFolders.toLowerCase() === 'true') {
             await handleCacheSave([upCacheDir, upHomeCacheDir, upHomeBuildCacheDir], workingDir);
         }
     }
@@ -65383,9 +65383,8 @@ async function getUpPath() {
 async function handleCacheRestore(cacheDirs, workingDir) {
     try {
         const cacheKey = generateCacheKey(workingDir);
-        const restoreKeys = generateRestoreKeys();
         core.info(`Attempting to restore cache with key: ${cacheKey}`);
-        const cacheHit = await cache.restoreCache(cacheDirs, cacheKey, restoreKeys);
+        const cacheHit = await cache.restoreCache(cacheDirs, cacheKey);
         if (cacheHit) {
             core.info(`Cache restored from key: ${cacheHit}`);
         }
@@ -65394,7 +65393,13 @@ async function handleCacheRestore(cacheDirs, workingDir) {
         }
     }
     catch (error) {
-        core.warning(`Cache restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error &&
+            error.message.includes('upbound.yaml not found')) {
+            core.info('Skipping cache restore: upbound.yaml not found in repository root');
+        }
+        else {
+            core.warning(`Cache restore failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
 }
 async function handleCacheSave(cacheDirs, workingDir) {
@@ -65410,35 +65415,30 @@ async function handleCacheSave(cacheDirs, workingDir) {
         }
     }
     catch (error) {
-        core.warning(`Cache save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        if (error instanceof Error &&
+            error.message.includes('upbound.yaml not found')) {
+            core.info('Skipping cache save: upbound.yaml not found in repository root');
+        }
+        else {
+            core.warning(`Cache save failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     }
 }
 function generateCacheKey(workingDir) {
     const baseKey = 'up-cache-v2';
     const runnerOS = process.env.RUNNER_OS || 'unknown';
     // Hash the upbound.yaml file for content-based caching
-    let upboundHash = '';
-    try {
-        const upboundPath = path.join(workingDir, 'upbound.yaml');
-        const upboundContent = fs.readFileSync(upboundPath, 'utf8');
-        upboundHash = crypto
-            .createHash('sha256')
-            .update(upboundContent)
-            .digest('hex')
-            .substring(0, 16);
+    const upboundPath = path.join(workingDir, 'upbound.yaml');
+    if (!fs.existsSync(upboundPath)) {
+        throw new Error('upbound.yaml not found in repository root');
     }
-    catch (error) {
-        core.warning(`Could not read upbound.yaml: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        // Fallback to timestamp if upbound.yaml doesn't exist
-        upboundHash = Date.now().toString(36);
-    }
+    const upboundContent = fs.readFileSync(upboundPath, 'utf8');
+    const upboundHash = crypto
+        .createHash('sha256')
+        .update(upboundContent)
+        .digest('hex')
+        .substring(0, 16);
     return `${baseKey}-${runnerOS}-${upboundHash}`;
-}
-function generateRestoreKeys() {
-    const baseKey = 'up-cache-v2';
-    const runnerOS = process.env.RUNNER_OS || 'unknown';
-    // For restore, we want to find caches with the same OS
-    return [`${baseKey}-${runnerOS}-`];
 }
 
 
