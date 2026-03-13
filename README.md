@@ -13,7 +13,7 @@ and add the following step to your workflow:
 
 ```yaml
 - name: Checkout Repository
-  uses: actions/checkout@v4
+  uses: actions/checkout@v6
 
 - name: Install and login with up
   uses: upbound/action-up@v1
@@ -27,7 +27,7 @@ and add the following step to your workflow:
 
 ```yaml
 - name: Checkout Repository
-  uses: actions/checkout@v4
+  uses: actions/checkout@v6
 
 - name: Install and login with up
   uses: upbound/action-up@v1
