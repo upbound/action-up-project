@@ -71,7 +71,7 @@ and add the following step to your workflow:
    PASS  __tests__/main.test.js
     action
       ✓ installs the up cli successfully (2 ms)
-      ✓ installs the up cli successfully without a v in front of the version (1 ms)
+      ✓ installs the up cli without a v prefix (1 ms)
 
    PASS  __tests__/index.test.js
     index
